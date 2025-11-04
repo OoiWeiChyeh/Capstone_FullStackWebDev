@@ -26,6 +26,28 @@ const taskSchema = new mongoose.Schema(
     dueDate: {
       type: Date,
     },
+    category: {
+      type: String,
+      enum: ["work", "personal", "shopping", "health", "other"],
+      default: "other",
+    },
+    tags: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
+    isFavorite: {
+      type: Boolean,
+      default: false,
+    },
+    isCompleted: {
+      type: Boolean,
+      default: false,
+    },
+    completedAt: {
+      type: Date,
+    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -36,5 +58,17 @@ const taskSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+// Update isCompleted when status changes to completed
+taskSchema.pre("save", function (next) {
+  if (this.status === "completed" && !this.completedAt) {
+    this.completedAt = new Date();
+    this.isCompleted = true;
+  } else if (this.status !== "completed") {
+    this.completedAt = null;
+    this.isCompleted = false;
+  }
+  next();
+});
 
 module.exports = mongoose.model("Task", taskSchema);

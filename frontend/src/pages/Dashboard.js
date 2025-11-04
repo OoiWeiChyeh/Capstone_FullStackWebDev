@@ -1,40 +1,41 @@
 import React, { useState } from "react";
-import { motion } from "framer-motion";
 import TaskForm from "../components/TaskForm";
 import TaskList from "../components/TaskList";
 
 const Dashboard = () => {
   const [refreshKey, setRefreshKey] = useState(0);
+  const [editingTask, setEditingTask] = useState(null);
 
   const handleTaskCreated = () => {
     setRefreshKey((prev) => prev + 1);
+    setEditingTask(null);
+  };
+
+  const handleEditTask = (task) => {
+    setEditingTask(task);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTask(null);
   };
 
   return (
     <div style={styles.container}>
-      <motion.div
-        style={styles.content}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        <motion.div
-          style={styles.heroSection}
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <h1 style={styles.welcomeTitle}>Welcome to Your Dashboard 🎯</h1>
-          <p style={styles.welcomeText}>
-            Manage your tasks efficiently and stay productive
-          </p>
-        </motion.div>
+      <div style={styles.content}>
+        <div style={styles.header}>
+          <h1 style={styles.title}>📊 My Dashboard</h1>
+          <p style={styles.subtitle}>Manage your tasks efficiently</p>
+        </div>
 
-        <TaskForm onTaskCreated={handleTaskCreated} />
-        <TaskList refresh={refreshKey} />
-      </motion.div>
+        <TaskForm
+          onTaskCreated={handleTaskCreated}
+          editTask={editingTask}
+          onCancelEdit={handleCancelEdit}
+        />
 
-      <div style={styles.backgroundPattern}></div>
+        <TaskList refresh={refreshKey} onEditTask={handleEditTask} />
+      </div>
     </div>
   );
 };
@@ -42,49 +43,28 @@ const Dashboard = () => {
 const styles = {
   container: {
     minHeight: "100vh",
-    background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
-    paddingTop: "40px",
-    paddingBottom: "60px",
-    position: "relative",
-    overflow: "hidden",
+    backgroundColor: "#ecf0f1",
+    paddingTop: "20px",
+    paddingBottom: "40px",
   },
   content: {
-    maxWidth: "1200px",
+    maxWidth: "1400px",
     margin: "0 auto",
-    padding: "0 24px",
-    position: "relative",
-    zIndex: 1,
+    padding: "0 20px",
   },
-  heroSection: {
-    textAlign: "center",
-    marginBottom: "48px",
+  header: {
+    marginBottom: "30px",
   },
-  welcomeTitle: {
-    fontSize: "48px",
-    fontWeight: "800",
-    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-    WebkitBackgroundClip: "text",
-    WebkitTextFillColor: "transparent",
-    backgroundClip: "text",
-    marginBottom: "12px",
-    letterSpacing: "-1px",
+  title: {
+    color: "#2c3e50",
+    marginBottom: "10px",
+    fontSize: "2.5rem",
+    fontWeight: "700",
   },
-  welcomeText: {
-    fontSize: "18px",
-    color: "#6b7280",
-    fontWeight: "500",
-  },
-  backgroundPattern: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundImage: `
-      radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.1) 0%, transparent 50%),
-      radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.1) 0%, transparent 50%)
-    `,
-    pointerEvents: "none",
+  subtitle: {
+    color: "#7f8c8d",
+    fontSize: "1.1rem",
+    margin: 0,
   },
 };
 

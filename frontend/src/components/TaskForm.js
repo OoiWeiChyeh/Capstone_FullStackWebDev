@@ -1,24 +1,37 @@
 import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { Plus, FileText, Calendar, Flag, Activity } from "lucide-react";
 import { taskAPI } from "../services/api";
-import { theme } from "../styles/theme";
 
-const TaskForm = ({ onTaskCreated }) => {
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    priority: "medium",
-    status: "pending",
-    dueDate: "",
-  });
+const TaskForm = ({ onTaskCreated, editTask, onCancelEdit }) => {
+  const [formData, setFormData] = useState(
+    editTask || {
+      title: "",
+      description: "",
+      priority: "medium",
+      status: "pending",
+      category: "other",
+      dueDate: "",
+      tags: "",
+      isFavorite: false,
+    }
+  );
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  React.useEffect(() => {
+    if (editTask) {
+      setFormData({
+        ...editTask,
+        tags: editTask.tags ? editTask.tags.join(", ") : "",
+      });
+    }
+  }, [editTask]);
+
   const handleChange = (e) => {
+    const value =
+      e.target.type === "checkbox" ? e.target.checked : e.target.value;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [e.target.name]: value,
     });
   };
 
@@ -28,186 +41,224 @@ const TaskForm = ({ onTaskCreated }) => {
     setLoading(true);
 
     try {
-      await taskAPI.createTask(formData);
+      const taskData = {
+        ...formData,
+        tags: formData.tags
+          ? formData.tags
+              .split(",")
+              .map((tag) => tag.trim())
+              .filter((tag) => tag)
+          : [],
+      };
+
+      if (editTask) {
+        await taskAPI.updateTask(editTask._id, taskData);
+      } else {
+        await taskAPI.createTask(taskData);
+      }
+
       setFormData({
         title: "",
         description: "",
         priority: "medium",
         status: "pending",
+        category: "other",
         dueDate: "",
+        tags: "",
+        isFavorite: false,
       });
+
+      if (onCancelEdit) onCancelEdit();
       onTaskCreated();
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to create task");
+      setError(err.response?.data?.message || "Failed to save task");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <motion.div
-      style={styles.container}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
+    <div style={styles.container}>
       <div style={styles.header}>
         <h2 style={styles.title}>
-          <Plus size={28} style={styles.titleIcon} />
-          Create New Task
+          {editTask ? "✏️ Edit Task" : "➕ Create New Task"}
         </h2>
-        <p style={styles.subtitle}>Add a new task to your list</p>
+        {editTask && (
+          <button onClick={onCancelEdit} style={styles.cancelBtn}>
+            Cancel
+          </button>
+        )}
       </div>
 
-      {error && (
-        <motion.div
-          style={styles.error}
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-        >
-          {error}
-        </motion.div>
-      )}
+      {error && <div style={styles.error}>{error}</div>}
 
       <form onSubmit={handleSubmit} style={styles.form}>
         <div style={styles.formGroup}>
           <label style={styles.label}>
-            <FileText size={18} style={styles.labelIcon} />
-            Task Title *
+            Title *
+            <input
+              type="text"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              required
+              style={styles.input}
+              placeholder="Enter task title"
+            />
           </label>
-          <input
-            type="text"
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            required
-            style={styles.input}
-            placeholder="Enter task title"
-          />
         </div>
 
         <div style={styles.formGroup}>
           <label style={styles.label}>
-            <FileText size={18} style={styles.labelIcon} />
             Description
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              style={styles.textarea}
+              placeholder="Enter task description"
+              rows="3"
+            />
           </label>
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            style={styles.textarea}
-            placeholder="Enter task description (optional)"
-            rows="3"
-          />
         </div>
 
         <div style={styles.row}>
           <div style={styles.formGroup}>
             <label style={styles.label}>
-              <Flag size={18} style={styles.labelIcon} />
               Priority
+              <select
+                name="priority"
+                value={formData.priority}
+                onChange={handleChange}
+                style={styles.select}
+              >
+                <option value="low">🟢 Low</option>
+                <option value="medium">🟡 Medium</option>
+                <option value="high">🔴 High</option>
+              </select>
             </label>
-            <select
-              name="priority"
-              value={formData.priority}
-              onChange={handleChange}
-              style={styles.select}
-            >
-              <option value="low">🟢 Low</option>
-              <option value="medium">🟡 Medium</option>
-              <option value="high">🔴 High</option>
-            </select>
           </div>
 
           <div style={styles.formGroup}>
             <label style={styles.label}>
-              <Activity size={18} style={styles.labelIcon} />
               Status
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                style={styles.select}
+              >
+                <option value="pending">⏸️ Pending</option>
+                <option value="in-progress">⚡ In Progress</option>
+                <option value="completed">✅ Completed</option>
+              </select>
             </label>
-            <select
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
-              style={styles.select}
-            >
-              <option value="pending">⏳ Pending</option>
-              <option value="in-progress">🚀 In Progress</option>
-              <option value="completed">✅ Completed</option>
-            </select>
           </div>
 
           <div style={styles.formGroup}>
             <label style={styles.label}>
-              <Calendar size={18} style={styles.labelIcon} />
-              Due Date
+              Category
+              <select
+                name="category"
+                value={formData.category}
+                onChange={handleChange}
+                style={styles.select}
+              >
+                <option value="work">💼 Work</option>
+                <option value="personal">👤 Personal</option>
+                <option value="shopping">🛒 Shopping</option>
+                <option value="health">💊 Health</option>
+                <option value="other">📌 Other</option>
+              </select>
             </label>
-            <input
-              type="date"
-              name="dueDate"
-              value={formData.dueDate}
-              onChange={handleChange}
-              style={styles.input}
-            />
           </div>
         </div>
 
-        <motion.button
-          type="submit"
-          disabled={loading}
-          style={styles.button}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          {loading ? (
-            "⏳ Creating..."
-          ) : (
-            <>
-              <Plus size={20} style={{ marginRight: "8px" }} />
-              Create Task
-            </>
-          )}
-        </motion.button>
+        <div style={styles.row}>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>
+              Due Date
+              <input
+                type="date"
+                name="dueDate"
+                value={formData.dueDate ? formData.dueDate.split("T")[0] : ""}
+                onChange={handleChange}
+                style={styles.input}
+              />
+            </label>
+          </div>
+
+          <div style={styles.formGroup}>
+            <label style={styles.label}>
+              Tags (comma-separated)
+              <input
+                type="text"
+                name="tags"
+                value={formData.tags}
+                onChange={handleChange}
+                style={styles.input}
+                placeholder="e.g., urgent, review, meeting"
+              />
+            </label>
+          </div>
+        </div>
+
+        <div style={styles.checkboxGroup}>
+          <label style={styles.checkboxLabel}>
+            <input
+              type="checkbox"
+              name="isFavorite"
+              checked={formData.isFavorite}
+              onChange={handleChange}
+              style={styles.checkbox}
+            />
+            ⭐ Mark as Favorite
+          </label>
+        </div>
+
+        <button type="submit" disabled={loading} style={styles.button}>
+          {loading
+            ? "⏳ Saving..."
+            : editTask
+            ? "💾 Update Task"
+            : "➕ Create Task"}
+        </button>
       </form>
-    </motion.div>
+    </div>
   );
 };
 
 const styles = {
   container: {
-    background:
-      "linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.9))",
-    backdropFilter: "blur(10px)",
-    padding: "32px",
-    borderRadius: "20px",
-    boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
-    marginBottom: "32px",
-    border: "1px solid rgba(255, 255, 255, 0.2)",
+    backgroundColor: "white",
+    padding: "25px",
+    borderRadius: "8px",
+    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+    marginBottom: "30px",
   },
   header: {
-    marginBottom: "28px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "20px",
   },
   title: {
-    display: "flex",
-    alignItems: "center",
     margin: 0,
-    marginBottom: "8px",
-    color: theme.colors.dark,
-    fontSize: "28px",
-    fontWeight: "700",
+    color: "#2c3e50",
   },
-  titleIcon: {
-    marginRight: "12px",
-    color: theme.colors.primary,
-  },
-  subtitle: {
-    color: theme.colors.gray[600],
-    fontSize: "15px",
-    margin: 0,
+  cancelBtn: {
+    backgroundColor: "#95a5a6",
+    color: "white",
+    border: "none",
+    padding: "8px 16px",
+    borderRadius: "4px",
+    cursor: "pointer",
+    fontSize: "14px",
   },
   form: {
     display: "flex",
     flexDirection: "column",
-    gap: "20px",
+    gap: "15px",
   },
   formGroup: {
     display: "flex",
@@ -215,80 +266,73 @@ const styles = {
     flex: 1,
   },
   label: {
+    marginBottom: "5px",
+    fontWeight: "500",
+    color: "#34495e",
     display: "flex",
-    alignItems: "center",
-    marginBottom: "10px",
-    fontWeight: "600",
-    color: theme.colors.gray[700],
-    fontSize: "14px",
-    textTransform: "uppercase",
-    letterSpacing: "0.5px",
-  },
-  labelIcon: {
-    marginRight: "8px",
-    color: theme.colors.primary,
+    flexDirection: "column",
+    gap: "5px",
   },
   input: {
-    padding: "14px 16px",
-    border: `2px solid ${theme.colors.gray[200]}`,
-    borderRadius: "12px",
-    fontSize: "15px",
-    transition: "all 0.3s ease",
-    outline: "none",
-    backgroundColor: "white",
+    padding: "10px",
+    border: "1px solid #ddd",
+    borderRadius: "4px",
+    fontSize: "14px",
   },
   textarea: {
-    padding: "14px 16px",
-    border: `2px solid ${theme.colors.gray[200]}`,
-    borderRadius: "12px",
-    fontSize: "15px",
+    padding: "10px",
+    border: "1px solid #ddd",
+    borderRadius: "4px",
+    fontSize: "14px",
     fontFamily: "inherit",
     resize: "vertical",
-    transition: "all 0.3s ease",
-    outline: "none",
-    backgroundColor: "white",
   },
   select: {
-    padding: "14px 16px",
-    border: `2px solid ${theme.colors.gray[200]}`,
-    borderRadius: "12px",
-    fontSize: "15px",
-    cursor: "pointer",
-    transition: "all 0.3s ease",
-    outline: "none",
-    backgroundColor: "white",
+    padding: "10px",
+    border: "1px solid #ddd",
+    borderRadius: "4px",
+    fontSize: "14px",
   },
   row: {
     display: "flex",
-    gap: "16px",
+    gap: "15px",
     flexWrap: "wrap",
   },
-  button: {
-    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-    color: "white",
-    padding: "16px 24px",
-    border: "none",
-    borderRadius: "12px",
-    fontSize: "16px",
-    fontWeight: "600",
-    cursor: "pointer",
+  checkboxGroup: {
     display: "flex",
     alignItems: "center",
-    justifyContent: "center",
-    boxShadow: theme.shadows.lg,
-    transition: "all 0.3s ease",
-    marginTop: "8px",
+    gap: "15px",
+  },
+  checkboxLabel: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    cursor: "pointer",
+    fontWeight: "500",
+    color: "#34495e",
+  },
+  checkbox: {
+    width: "18px",
+    height: "18px",
+    cursor: "pointer",
+  },
+  button: {
+    backgroundColor: "#3498db",
+    color: "white",
+    padding: "12px",
+    border: "none",
+    borderRadius: "4px",
+    fontSize: "16px",
+    fontWeight: "500",
+    cursor: "pointer",
+    transition: "background-color 0.3s",
   },
   error: {
-    backgroundColor: "#fee2e2",
-    color: "#dc2626",
-    padding: "14px",
-    borderRadius: "12px",
-    marginBottom: "20px",
-    textAlign: "center",
-    fontSize: "14px",
-    fontWeight: "500",
-    border: "1px solid #fecaca",
+    backgroundColor: "#fee",
+    color: "#c33",
+    padding: "10px",
+    borderRadius: "4px",
+    marginBottom: "15px",
   },
 };
 
