@@ -26,21 +26,22 @@ Built with **MERN stack** (MongoDB, Express, React, Node.js) and deployed using 
 ---
 
 ## 📂 Folder Structure
-Capstone_FullStackWebDev/
-│
-├── backend/ or server/ # Express + Node backend
-│ ├── server.js # Main backend entry point
-│ ├── routes/ # Express route handlers
-│ ├── models/ # Mongoose schemas
-│ ├── controllers/ # Business logic
-│ └── .env.example # Example environment variables
-│
-├── frontend/ # React app
-│ ├── src/
-│ │ ├── components/ # UI Components (TaskList, TaskForm, Navbar)
-│ │ ├── pages/ # Page-level views (Dashboard, Login)
-│ │ ├── App.js # App router
-│ │ └── index.js # Entry point
-│ └── public/ # index.html, favicon, manifest
-│
-└── README.md # Project documentation
+
+**Capstone_FullStackWebDev/**
+- **backend/** – Express + Node backend  
+  - `server.js` – Main backend entry point  
+  - `routes/` – Express route handlers  
+  - `models/` – Mongoose schemas  
+  - `controllers/` – Business logic  
+  - `.env.example` – Example environment variables  
+- **frontend/** – React app  
+  - **src/**
+    - `components/` – UI Components (TaskList, TaskForm, Navbar)  
+    - `pages/` – Page-level views (Dashboard, Login)  
+    - `App.js` – App router  
+    - `index.js` – Entry point  
+  - **public/**
+    - `index.html` – Main HTML file  
+    - `favicon.ico` – Site icon  
+    - `manifest.json` – PWA config  
+- **README.md** – Project documentation
